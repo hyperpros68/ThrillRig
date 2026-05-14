@@ -1,0 +1,300 @@
+:root {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --accent-color: #38bdf8;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --success: #22c55e;
+    --error: #ef4444;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 400px;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.password-toggle:hover {
+    color: var(--accent-color);
+}
+
+input {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: white;
+    box-sizing: border-box;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--accent-color);
+    color: #0f172a;
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+}
+
+/* Dashboard Layout */
+.dashboard-container {
+    width: 100%;
+    min-height: 90vh;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1rem;
+    align-items: stretch;
+}
+
+/* Responsive Design (Mobile & Tablet) */
+@media screen and (max-width: 999px) {
+    body {
+        padding: 0 !important;
+    }
+    
+    .dashboard-container {
+        grid-template-columns: 1fr !important;
+        height: 100vh !important;
+        gap: 0 !important;
+    }
+
+    /* 모바일에서 사이드바 숨김 및 슬라이드 설정 */
+    .sidebar-card {
+        position: fixed !important;
+        left: -100% !important; /* 화면 밖으로 완전히 밀어냄 */
+        top: 0 !important;
+        width: 260px !important;
+        height: 100% !important;
+        z-index: 1000 !important;
+        transition: all 0.3s ease !important;
+        border-radius: 0 1.5rem 1.5rem 0 !important;
+        visibility: hidden; /* 시각적으로 완전히 차단 */
+        box-shadow: none !important;
+    }
+
+    .sidebar-card.active {
+        left: 0 !important; /* 나타남 */
+        visibility: visible !important;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    /* 햄버거 버튼 스타일 */
+    .menu-toggle {
+        display: block !important;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1100;
+        background: var(--accent-color);
+        border: none;
+        color: #0f172a;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        transition: all 0.3s ease;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    /* 메뉴가 열렸을 때 외부 버튼 숨김 (사이드바 내부 닫기 버튼 사용) */
+    .menu-toggle.active {
+        display: none !important;
+    }
+
+    .sidebar-close-btn {
+        display: block !important;
+    }
+
+    .chat-box {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        height: -webkit-fill-available !important; /* 모바일 브라우저 대응 */
+        border-radius: 0 !important;
+        border: none !important;
+        padding-top: 60px !important; /* 메뉴 버튼 공간 */
+    }
+
+    .chat-messages {
+        flex: 1 !important; /* 남는 공간 모두 차지 */
+        overflow-y: auto !important; /* 내부 스크롤 */
+        height: auto !important;
+    }
+
+    /* 입력 영역 고정 및 여백 추가 */
+    .chat-box > div:last-child {
+        background: rgba(15, 23, 42, 0.95) !important;
+        backdrop-filter: blur(10px);
+        padding: 1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom)) !important; /* 하단 여백 대폭 추가 */
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* 배경 오버레이 */
+    .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+
+    .overlay.active {
+        display: block;
+    }
+}
+
+/* 기본적으로 햄버거 버튼 숨김 */
+.menu-toggle {
+    display: none;
+}
+
+.sidebar-card {
+    background: var(--card-bg);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 사이드바 내부 닫기 버튼 */
+.sidebar-close-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: none; /* 데스크탑에서는 숨김 */
+}
+
+.sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.logout-btn svg {
+    stroke: #94a3b8; /* 차분한 회색조 */
+    width: 20px;
+    height: 20px;
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1); /* 호버 시 연한 레드 배경 */
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.logout-btn:hover svg {
+    stroke: #ef4444; /* 호버 시 아이콘 레드 */
+    transform: translateX(2px);
+}
+
+.chat-box {
+    background: var(--card-bg);
+    border-radius: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.msg-bubble {
+    background: #334155;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+    max-width: 80%;
+}

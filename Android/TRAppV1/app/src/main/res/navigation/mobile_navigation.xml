@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.thrillrig.trappv1.ui.home.HomeFragment"
+        android:label="홈"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nav_manager"
+        android:name="com.thrillrig.trappv1.ui.ManagerFragment"
+        android:label="매니저 관리"
+        tools:layout="@layout/fragment_manager" />
+
+    <fragment
+        android:id="@+id/nav_agent"
+        android:name="com.thrillrig.trappv1.ui.AgentFragment"
+        android:label="총판 관리"
+        tools:layout="@layout/fragment_agent" />
+
+    <fragment
+        android:id="@+id/nav_shop"
+        android:name="com.thrillrig.trappv1.ui.ShopFragment"
+        android:label="매장 관리"
+        tools:layout="@layout/fragment_shop" />
+
+    <fragment
+        android:id="@+id/nav_common"
+        android:name="com.thrillrig.trappv1.ui.CommonFragment"
+        android:label="설정"
+        tools:layout="@layout/fragment_common" />
+</navigation>

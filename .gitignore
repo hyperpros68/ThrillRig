@@ -1,0 +1,11 @@
+# Log files
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build/Artifacts
+bin/
+obj/

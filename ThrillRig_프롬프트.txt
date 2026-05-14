@@ -1,0 +1,31 @@
+
+
+
+1. 서버 구축 -> eJabber 설치 되어있 
+- 서버 IP : 59.187.96.23 
+- OS : ubuntu
+- ID : esg
+- PW : esg!@#$
+- path : /home/esg/Project/ThrillRig/Program
+- plink, pscp로 작업을 했음.
+
+2. TRAdapter 프로그램과 TRAppV1 프로그램이 ejabber [XMPP] 통신으로  C:\HGame\ThrillRig.txt 의 내용을 주고받는 프로그램을 만들어야 해
+3. TRAdapter 프로그램의 계정 : test_tradp_t001_001@59.187.96.23 / tradp!@#$
+4. TRAppV1 프로그램의 계정 : test_trmgr_001@59.187.96.23 / trmgr!@#$
+5. 1단계 : eJabber 에 위의 계정들 만들어 줘
+6. 2단계 : TRAdapter C:\HGame\ThrillRig.txt 파일의 내용이 변경되면 TRAppV1으로 변경된 내용 전송하고 TRAppV1의 화면에 전송된 내용 표시되게 해줘 
+
+1. Service에 www\index.php를 기준으로 Hellow world를 보여주고 
+2. TRAppV1의 fab 버튼을 누르면 "Hello"라는 메세지를  Xmpp로 index.php 에 알람형태로 보여주게 해줘
+
+
+admin은 manager, agent, shop, adapter를 다 관리하고
+manager는 agent, shop, adapter를 다 관리하고
+agent는 shop, adapter를 다 관리하고
+shop는 adapter를 다 관리하는 내용을 프롬프트에 주가해 줘
+
+1. TRAdapter에 Visual studio에 Runtime 라이브러리를 사용하지 않는 TRAdtInstaller프로젝트 하나 추가해줘
+2. 사용자 화면에 TRAdapter의 실행에 필요한 id, pw, to를 입력받아 레지스트리에 저장을 한후 TRAdapter 실행파일을 특정 위치에 복사한다.
+3. TRAdapter는 실행시 인자가 없으면 2번에서 저장한 레지스트리의 값을 사용한다.
+4. 레지스트리 키는 최대한 탐색하기 어려운 위치에 Key를 사용하게 해야 해
+

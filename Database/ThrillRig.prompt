@@ -1,0 +1,63 @@
+# Role
+너는 10년 경력의 시니어 DB 아키텍트이자 백엔드 개발자야. 
+아래의 정교한 요구사항을 바탕으로 MySQL DB 스키마와 계층형 샘플 데이터를 생성하는 SQL 스크립트를 작성해줘.
+
+# 1. 설계 원칙: Class Table Inheritance + Audit + Automation
+- **Base + Extension**: 공통 계정(`tr_users`)과 역할별 상세 정보를 분리하여 eJabberd 인증과 데이터 확장을 동시에 최적화한다.
+- **Observability (관측 가능성)**: 모든 신호와 상태 변화를 기록하는 로그 시스템을 구축한다.
+- **Operational Automation**: 매장별 어댑터 대량 생성을 위한 DB 레벨의 자동화 로직을 포함한다.
+
+# 2. DB 스키마 상세 요구사항
+
+## A. 핵심 계정 테이블 (`tr_users`)
+- `id`: INT (PK, Auto Increment) - 시스템 내부 참조용 유니크 정수 ID.
+- `login_id`: VARCHAR(50) (Unique, Not Null) - 사용자가 입력하는 로그인 ID이자 eJabberd JID의 prefix. (인덱스 필수)
+- `password`: VARCHAR(255) (Not Null) - 패스워드. (보안을 위해 최소 255자 확보, 암호화 권장)
+- `name`: VARCHAR(100) (Not Null) - 사용자 실명, 매장 명칭 또는 장비 별칭.
+- `role`: ENUM ('ADMIN', 'MANAGER', 'AGENT', 'SHOP', 'ADAPTER') (Not Null) - 계정의 권한 유형.
+- `parent_id`: INT (FK to `tr_users.id`) - 상위 관리자 식별자. 자기 참조(Self-referencing) 외래 키.
+- `status`: VARCHAR(20) (Default 'ACTIVE') - 계정 상태 (ACTIVE, INACTIVE, SUSPENDED).
+- `created_at`: TIMESTAMP (Default CURRENT_TIMESTAMP) - 계정 생성 일시.
+- `updated_at`: TIMESTAMP (Default CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) - 최종 수정 일시.
+- `deleted_at`: TIMESTAMP (NULL Default) - 소프트 델리트(Soft Delete)용 일시 기록.
+
+## B. 역할별 상세 테이블 (Extension)
+- **모든 상세 테이블의 PK는 `user_id` (INT)이며 `tr_users.id`를 외래 키로 참조한다.**
+- `tr_admin_info`: `admin_level` (관리 등급), `memo` 포함.
+- `tr_manager_info`: `region` (담당 지역), `phone` 포함.
+- `tr_agent_info`: `commission_rate` (수수료), `contract_date` 포함.
+- `tr_shop_info`: `adapter_limit` (어댑터 생성 제한), `address`, `business_no` 포함.
+- `tr_adapter_info`: `file_path` (감시 파일 경로), `pc_spec` (사양), `mac_address` 포함.
+
+## C. 관제 및 감사 시스템 (Audit & Monitoring)
+- **`tr_adapter_signals`**: 어댑터 수신 데이터 로그 (user_id, raw_content, received_at).
+- **`tr_connection_logs`**: 접속 이력 (user_id, event_type[ON/OFF], ip_address, created_at).
+- **`tr_notifications`**: 중요 이벤트 알람 (id, user_id, message, is_read, created_at).
+- **`tr_system_logs`**: 관리자 행위 로그 (admin_id, target_id, action, description, created_at).
+
+# 3. 자동화 및 보안 로직
+- **Stored Procedure (`sp_auto_generate_adapters`)**: Shop ID와 생성 수량을 입력받아 `adp_shopID_001` 패턴의 계정을 `tr_users`와 `tr_adapter_info`에 자동 생성하는 로직.
+- **Index 전략**: `login_id` 및 `parent_id`에 최적화된 인덱스 구성.
+- **패스워드 암호화**: 모든 패스워드는 `login_id`값을 기반으로 암호화(Encryption) 로직이 반영되도록 설계하라. (샘플 데이터 및 프로시저 포함)
+
+# 4. 샘플 데이터 생성 규칙 (계층적 연결 필수)
+모든 데이터는 `tr_users` 생성 후 해당 역할을 가진 상세 테이블에도 연동 데이터가 들어가야 한다.
+
+- **[관리 계층 데이터]**
+  1. Admin: login_id: `admin`, PW: `esg!@#$` (최상위)
+  2. Manager: `manager_001` (Parent: admin), PW: `trmgr!@#$`
+  3. Agent: `agent_001` (Parent: manager_001), PW: `tragt!@#$`
+  4. Shop: `shop_001` (Parent: agent_001), PW: `trshop!@#$`, adapter_limit: 10
+  5. Adapter: `adp_shop001_001`~`003` (Parent: shop_001), PW: `tradp!@#$`, file_path: 'C:\\HGame\\ThrillRig.txt'
+
+- **[테스트 및 개발자 계정]**
+  - 명시된 `test_trmgr_[001~003]`, `test_tragt_[001~003]`, `test_shop_[001~003]`, `test_tradp_[001~003]` 계정들을 계층 관계에 맞춰 대량 생성하라.
+  - `test_trllm`, `test_trwww` 계정도 적절한 위치에 생성.
+
+# 4. 출력 요구사항
+1. 전체 테이블 및 제약조건 생성 DDL.
+2. 어댑터 자동 생성을 위한 Stored Procedure SQL.
+3. 계층 관계가 반영된 종합 Insert SQL (프로시저 호출 예시 포함).
+4. eJabberd 인증 및 대시보드용 주요 쿼리 예시.
+5. 모든 코드에 시니어 개발자의 상세 한글 주석 포함.
+

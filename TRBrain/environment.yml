@@ -1,0 +1,15 @@
+name: trbrain_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+    - flask
+    - flask-socketio
+    - slixmpp
+    - mysql-connector-python
+    - requests
+    - eventlet
+    - pyopenssl

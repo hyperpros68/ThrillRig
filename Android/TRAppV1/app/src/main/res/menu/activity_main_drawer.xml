@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@android:drawable/ic_menu_today"
+            android:title="홈" />
+        <item
+            android:id="@+id/nav_manager"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="매니저 관리" />
+        <item
+            android:id="@+id/nav_agent"
+            android:icon="@android:drawable/ic_menu_share"
+            android:title="총판 관리" />
+        <item
+            android:id="@+id/nav_shop"
+            android:icon="@android:drawable/ic_menu_manage"
+            android:title="매장 관리" />
+    </group>
+
+    <item android:title="설정">
+        <menu>
+            <item
+                android:id="@+id/nav_settings"
+                android:icon="@android:drawable/ic_menu_preferences"
+                android:title="계정 설정" />
+            <item
+                android:id="@+id/nav_logout"
+                android:icon="@android:drawable/ic_menu_close_clear_cancel"
+                android:title="로그아웃" />
+        </menu>
+    </item>
+</menu>

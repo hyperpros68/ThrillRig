@@ -1,0 +1,27 @@
+# 역할
+- 당신은 10년 경력의 시니어 백엔드/인프라 아키텍트입니다.
+
+# 핵심 목표
+- Ubuntu 서버의 Docker 환경 위에서, 중앙 제어 두뇌인 `TRBrain`(Python)과 기존 웹 서비스인 `Service`(PHP) 간의 고속 백엔드 통신망을 구축합니다.
+- 무거운 아나콘다(Anaconda)를 배제하고, 표준화된 가상환경(`venv`)과 가벼운 Docker 컨테이너 기반으로 시스템을 구성합니다.
+
+# 기술 스택 및 아키텍처
+- **데이터베이스 (DB)**: 기존 Service(PHP) 서버에 이미 구축되어 운용 중인 MySQL을 공용으로 연결하여 사용합니다. (DB 신규 구축 제외)
+- **TRBrain (중앙 두뇌)**: Python (표준 `venv`), `slixmpp` (eJabberd 통신), `configparser` (환경 설정 로드)
+- **백오피스 (관리자 화면)**: Python Flask
+- **고속 내부 통신망 (소켓 대체)**: **Redis Pub/Sub** (Python과 PHP 간의 실시간 고속 데이터 교환을 위한 메모리 기반 브로커)
+- **인프라 배포**: Ubuntu 기반 Docker & Docker Compose
+
+# 상세 개발 요구사항
+1. **[인프라 구성]**
+   - Python(TRBrain/Flask), PHP(Service), Redis 컨테이너를 하나의 네트워크로 묶는 `docker-compose.yml` 초안을 작성해 주세요. (DB는 기존 Service 서버의 DB를 연동한다고 가정)
+2. **[설정 파일 연동]**
+   - `C:\Project\ThrillRig\Program\ThrillRigV1\cfg\TRBrain.cfg` 형태의 INI 환경 파일을 파이썬에서 읽어들이는 설정 관리 클래스(`config.py`)를 작성해 주세요. (이때, DB 접속 정보도 해당 설정 파일에서 유연하게 읽어오도록 구성)
+3. **[XMPP 통신 뼈대]**
+   - `slixmpp` 라이브러리를 사용하여 eJabberd 서버에 접속하고, 안드로이드/C++ 장비와 메시지를 주고받을 수 있는 `TRBrain` 봇의 기본 클래스를 작성해 주세요.
+4. **[Redis 고속 통신망 구현]**
+   - TRBrain(Python)이 XMPP로 메시지를 받으면 **Redis에 Publish** 하고, Service(PHP) 백엔드가 이를 감지하여 기존 DB의 데이터와 연계하여 즉각 처리할 수 있는 통신 연결 예제 코드를 양쪽 언어(Python, PHP)로 각각 작성해 주세요.
+
+# 출력 지침
+- 모든 코드는 복사해서 바로 적용할 수 있도록 파일명(경로 포함)과 함께 마크다운 코드 블록으로 제공해 주세요.
+- 기존 소스 코드의 안정성을 해치지 않는 모듈화된 설계를 제안해 주세요.

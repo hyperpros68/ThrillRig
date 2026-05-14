@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" href="data:,">
+    <title>TRBrain - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=3.0">
+    <!-- 더 안정적인 최신 Socket.IO CDN 사용 -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="align-items: flex-start; padding: 2rem;">
+    <!-- Mobile Hamburger Button -->
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+    
+    <!-- Mobile Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar: System Info -->
+        <div class="sidebar-card" id="sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="color: var(--accent-color); margin: 0; font-size: 1.25rem;">🧠 TRBrain</h2>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <!-- 로그아웃 버튼 (좌측) -->
+                    <a href="/logout" class="logout-btn" title="Logout">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    </a>
+                    <!-- 닫기 버튼 (우측, 모바일 전용) -->
+                    <button class="sidebar-close-btn" onclick="toggleMenu()" title="Close Menu">✕</button>
+                </div>
+            </div>
+            <div class="status-item">
+                <label>Active LLM</label>
+                <div style="font-size: 1.2rem; font-weight: 600;">{{ llm }}</div>
+            </div>
+            <hr style="border: 0.5px solid #334155; margin: 1.5rem 0;">
+            <div class="status-item">
+                <label>User</label>
+                <div style="color: var(--success);">● Online: {{ user }}</div>
+            </div>
+        </div>
+
+        <!-- Main: XMPP Chat Monitor -->
+        <div class="chat-box">
+            <div style="padding: 1.5rem; background: rgba(255,255,255,0.05); border-bottom: 1px solid #334155;">
+                <h3 style="margin:0;">XMPP Real-time Monitor</h3>
+            </div>
+            <div class="chat-messages" id="messages">
+                <!-- Messages will appear here -->
+                <div class="msg-bubble" style="background: rgba(56, 189, 248, 0.1); border: 1px solid var(--accent-color);">
+                    <small style="color: var(--accent-color);">System</small><br>
+                    TRBrain Messaging Service is active.
+                </div>
+            </div>
+            <div style="padding: 1.5rem; background: rgba(0,0,0,0.2); border-top: 1px solid #334155;">
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="target_jid" placeholder="Target JID (e.g. test_tradp_001_001@59.187.96.23)" style="flex: 1;">
+                    <input type="text" id="chat_input" placeholder="Message..." style="flex: 2;">
+                    <button class="btn-primary" style="width: auto; padding: 0.75rem 1.5rem;" onclick="sendChat()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 모바일 메뉴 토글 함수 (전역 안전성 확보)
+        window.toggleMenu = function() {
+            try {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('overlay');
+                const btn = document.querySelector('.menu-toggle');
+                
+                if (sidebar) sidebar.classList.toggle('active');
+                if (overlay) overlay.classList.toggle('active');
+                if (btn) {
+                    btn.classList.toggle('active');
+                    btn.innerHTML = sidebar.classList.contains('active') ? '✕' : '☰';
+                }
+            } catch (e) { console.error("Menu Toggle Error:", e); }
+        }
+
+        var socket;
+        try {
+            socket = io();
+        } catch (e) {
+            console.error("Socket.IO Connection Error (UI functions will still work):", e);
+        }
+
+        if (socket) {
+            socket.on('new_msg', function(data) {
+                var msgDiv = document.createElement('div');
+                msgDiv.className = 'msg-bubble';
+                msgDiv.innerHTML = '<small style="color: var(--accent-color);">' + data.sender + '</small><br>' + data.body;
+                document.getElementById('messages').appendChild(msgDiv);
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            });
+        }
+
+        function sendChat() {
+            var to = document.getElementById('target_jid').value;
+            var msg = document.getElementById('chat_input').value;
+            if (to && msg && socket) {
+                socket.emit('send_chat', {to: to, msg: msg});
+                
+                // 내 화면에도 표시
+                var msgDiv = document.createElement('div');
+                msgDiv.className = 'msg-bubble';
+                msgDiv.style.marginLeft = 'auto';
+                msgDiv.style.background = 'var(--accent-color)';
+                msgDiv.style.color = '#0f172a';
+                msgDiv.innerHTML = '<small>Me to ' + to + '</small><br>' + msg;
+                document.getElementById('messages').appendChild(msgDiv);
+                
+                document.getElementById('chat_input').value = '';
+                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            } else if (!socket) {
+                alert("실시간 서버에 연결되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+            }
+        }
+    </script>
+</body>
+</html>

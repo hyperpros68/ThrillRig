@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  trbrain:
+    build: .
+    container_name: trbrain_service
+    ports:
+      - "19990:19990"
+    volumes:
+      # 호스트의 설정과 로그 폴더를 컨테이너와 연결
+      - ./cfg:/app/cfg
+      - ./log:/app/log
+      - ./main:/app/main
+    restart: always
+    environment:
+      - TZ=Asia/Seoul
+    networks:
+      - tr_network
+
+networks:
+  tr_network:
+    driver: bridge

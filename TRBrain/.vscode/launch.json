@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: TRBrain Main",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "FLASK_ENV": "development"
+            },
+            "args": [],
+            "justMyCode": true
+        }
+    ]
+}

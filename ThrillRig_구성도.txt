@@ -1,0 +1,188 @@
+A. 프로그램 개요
+
+0. 사전 준비 
+  - DNS 신청  --> thrillrig.com 신청
+  - 고정 IP 한개 / 유동 인터넷 신청
+  - PC에 감시해야할 파일(int[4] : 총 16Byte)
+    C:\~~~\SaveData.bin
+ 
+  - 안드로이드 폰 1대
+  - 주차 등록 : 54로 0776
+
+1. Service 서버 구축
+- https://59.187.96.23:9990
+- 서버 IP : 59.187.96.23 
+- OS : ubuntu
+- ID : esg
+- PW : esg!@#$
+- path : /home/esg/Project/ThrillRig/Program/Service
+- plink, pscp로 작업을 했음.
+
+2. TRBrain 서버 구축
+- 서버 IP : 59.187.96.23 
+- OS : ubuntu
+- ID : esg
+- PW : esg!@#$
+- path : /home/esg/Project/ThrillRig/Program/TRBrain
+- plink, pscp로 작업을 했음.
+
+3. DB Sever 구축 : mysql workbench 8.0  (window version) 깔려 있음
+ * local pc 사용(ID : root, PW : sena5289)
+ * esg 서버 DB 접속정보 (ID : root, PW : esg!@#$)
+ - Database : ThrillRig
+ - ID : thrillrig
+ - PW : tr!@#$
+
+4. eJabber 서버 설치
+ - https://59.187.96.23:5280/admin 
+   ID : admin@59.187.96.23 / esg!@#$로 로그인이 가능해집니다.
+ - 계정관리 : 각 Table들 Union 해서 eJabber에서 외부 DB를 사용하여 계정관리 함
+
+
+
+B. 사용자 및 장지 구분
+ * www : web service, App : 안드로이드 앱, PC : C++ 프로그램
+ 
+ 1. TRAdmin:어드민 (WWW)  --> 전제 관리, 모든메뉴 접근
+    ID : admin, admin_001 ~ 009 (일부기능 제외)
+ 
+ 2. TRManager:관리자(App,WWW) -> 일부기능 사용 : Agent 관리, Shop 관리, Adpater관리
+   - manager_ID 사용
+
+ 3. TRAgent:총판(App) -> 일부기능 사용 : Shop 관리, Adpater관리
+   - agent_ID 사용
+
+ 4. TRShop:매장주인(App) -> 일부기능 사용 : Adpater관리
+   - shop_ID사용
+
+ 5. TRAdapter:사용자(PC) -> 파일감시 및 서버에 신호 전송
+   - adapter ID 사용 : [shop ID]_[001 ~ 099] 형태
+   - shop Table에 갯수 지정하면 자동으로 생성
+   
+DB Table 
+  tr_adpter, tr_shop, tr_agent, tr_manager, tr_admin
+
+■ ThrillRig 테스트 및 개발용 계정 정보
+---------------------------------------------------------------------------------------------------
+사용자 유형 (Type)  | 아이디 (ID)          | 비밀번호 (PW) | XMPP JID (ID@59.187.96.23)       | 플랫폼
+---------------------------------------------------------------------------------------------------
+TRAdmin (어드민)    | admin                | esg!@#$       | admin@59.187.96.23               | 웹 (WWW)
+TRBrain (LLM)    | brain                | esg!@#$       | brain@59.187.96.23               | 웹 (TRBrain+ flask)
+TRManager (관리자)  | test_trmgr_001       | trmgr!@#$     | test_trmgr_001@59.187.96.23      | 앱 / 웹
+TRAgent (총판)      | test_tragt_001_001   | tragt!@#$     | test_tragt_001_001@59.187.96.23  | 앱 / 웹
+TRShop (매장)       | test_shop_001        | trshop!@#$    | test_shop_001@59.187.96.23       | 앱 / PC
+TRAdapter (장비)    | test_tradp_001_001   | tradp!@#$     | test_tradp_001_001@59.187.96.23  | C++ Agent
+Service Server      | test_trwww           | trwww!@#$     | test_trwww@59.187.96.23          | 중앙 서버
+LLM Server          | test_trllm           | trllm!@#$     | test_trllm@59.187.96.23          | AI 엔진
+---------------------------------------------------------------------------------------------------
+■ ThrillRig 실계정 및 서버 계정 정보
+---------------------------------------------------------------------------------------------------
+사용자 유형 (Type)  | 아이디 (ID)          | 비밀번호 (PW) | XMPP JID (ID@Domain)             | 플랫폼
+---------------------------------------------------------------------------------------------------
+App 계정            | mgr_shopid_001       | trmgr!@#$     | mgr_shopid_001@thrillrig.com     | 안드로이드
+Agent 계정          | agt_shopid_001       | tragt!@#$     | agt_shopid_001@thrillrig.com     | 앱 / 웹
+Shop 계정           | shop_001             | trshop!@#$    | shop_001@thrillrig.com            | 앱 / PC
+Adapter 계정        | adp_shopid_001       | tradp!@#$     | adp_shopid_001@thrillrig.com     | C++ Agent
+LLM 서버            | trllm                | trllm!@#$     | trllm@59.187.96.23               | 리눅스
+Service 서버        | trwww                | trwww!@#$     | trwww@59.187.96.23               | 리눅스
+---------------------------------------------------------------------------------------------------
+ 
+ 등록
+ - LLM 서버 계정     : trllm@[IP_ADDRESS] / trllm!@#$
+ - Service 서버 계정 : trwww@[IP_ADDRESS] / trwww!@#$
+ - Adapter 계정      : adp_shopid_001@thrillrig.com / tradp!@#$  
+ - shop 계정        : shop_001@thrillrig.com / trshop!@#$   
+ - agent 계정        : agt_shopid_001@thrillrig.com / tragt!@#$   
+ - App 계정  : mgr_shopid_001@thrillrig.com / trmgr!@#$ 
+
+[Test 및 개발자 계정]
+ - test_tradp_[shop id]_[001 ~ 003]@59.187.96.23 / tradp!@#$
+ - test_tragt_[shop id]_[001 ~ 003]@59.187.96.23 / tragt!@#$
+ - test_shop_[001 ~ 003]@59.187.96.23 / trshop!@#$
+ - test_trmgr_[001 ~ 003]@59.187.96.23 / trmgr!@#$
+ - test_trllm@59.187.96.23 / trllm!@#$
+ - test_trwww@59.187.96.23 / trwww!@#$
+
+B. 콜 쏴주는 앱
+
+1. TRAdapter : PC에 깔리는 xmpp client 프로그램
+  개발언어 : C++, Pure Win32 API만 사용 
+  개발환경 : Visaul studio
+  Protocol : XMPP, eJabber 서버 사용
+     * 접속 ID, PW는  실행파일 옵션으로 지정
+     * 특정파일(소스에 지정 C:\HGame\ThrillRig.txt)이 변경되면 바로 자동하여 해당 파일내용을 서버에 보낸다.
+   TRAdapter.exe -id admin@59.187.96.23 -pw "esg!@#$" -host 59.187.96.23 -file "C:\HGame\ThrillRig.txt"
+    회원 구분 (Type)	로그인 ID	    비밀번호 (PW)
+    MANAGER (매니저)	manager_001	 trmgr!@#$
+    AGENT (총판)	    agent_001	   tragt!@#$
+    SHOP (매장)	      shop_001	   trshop!@#$
+
+
+2. TRBrain : 
+ - python(3.12 버젼이상) + LLM + websocket + flask
+ - DB 서버 연결
+ - Login 창을 사용하여 로그인을 하고 관리자가 사용할수 있는 UI가 필요
+ - eJabber로 메세지를 주고받는 기능 탑제
+    사용계정 : TRBrain (LLM)    | brain                | esg!@#$       | brain@59.187.96.23               | 웹 (TRBrain+ flask)
+ - 메인파일 : TRBrain\main\main.py
+   * TRBrain\cfg\TRBrain.cfg사용
+   * 로그는  TRBrain\log\TRBrain_20260510_132050.log 형태의 파일에 기록
+ - 여러 LLM을 사용할수 있는구조 적용 -> TRBrain.cfg 사용
+ - linux(Ubuntu) + Docker + 아나콘다 환경
+ - https://59.187.96.23:19990 으로 관리하게 해줘
+
+
+2. Android :
+ - 앱로그경로: /data/user/0/com.thrillrig.trappv1/files/thrillrig_log.txt
+
+5. Service :
+ 개발언어 : php, mysql
+
+D. Test 준비
+6. PC simulator
+
+가. 
+
+가. 각 시스템간 신호 종류
+  * 신호 종류별로 Format 넣어주시고 예를 하나씩 들어 주세요
+ 1. Call(신호)
+  - 
+ 2. Control(제어)
+  - 
+ 3. Emergency(응급)
+  -
+ 4. Statics(정산)
+  -
+ 5. Billing(과금)RF <--> Client
+  - 
+
+다. PC, 업주, 총판, 관리자, 어드민 간 신호
+
+
+
+ A. Client <--> 업주
+    1. PC에서 실시간으로 게임 정보
+    2. 
+ 
+ 2. PC <--> 총판
+
+ 3. PC <--> 관리자
+ 
+ 4. PC <--> 어드민
+ 
+ 5. 업주 <--> 총판
+ 
+ 6. 업주 <--> 관리자
+ 
+ 7. 업주 <--> 어드민
+ 
+ 8. 총판 <--> 관리자
+ 
+ 9. 총판 <--> 어드민
+ 
+ 10. 관리자 <--> 어드민 
+
+
+
+전송 Data 정의
+1 
