@@ -37,7 +37,7 @@ extauth_program: "/usr/sbin/trauth_wrapper.sh"
 
 sql_type: mysql
 sql_server: "localhost"
-sql_database: "ThrillRig"
+sql_database: "thrillrig"
 sql_username: "thrillrig"
 sql_password: "tr!@#$"
 sql_pool_size: 5
