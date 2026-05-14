@@ -6,6 +6,38 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.ipch
+*.aps
+*.ncb
+*.openedition
+*.cache
+*.db
+*.opendb
+
 # Build/Artifacts
 bin/
 obj/
+Debug/
+Release/
+x64/
+x86/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+.env
+
+# Mobile (Android)
+.gradle/
+build/
+captures/
+*.apk
+*.ap_
