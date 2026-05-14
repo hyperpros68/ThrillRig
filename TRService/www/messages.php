@@ -10,13 +10,28 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Search Filter
+// Search Filters
 $search_user = isset($_GET['user']) ? $_GET['user'] : '';
-$sql = "SELECT id, bare_peer, txt, created_at FROM archive";
+$search_keyword = isset($_GET['keyword']) ? $_GET['keyword'] : '';
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
+
+$sql = "SELECT id, bare_peer, txt, created_at FROM archive WHERE 1=1";
+
 if ($search_user) {
-    $sql .= " WHERE bare_peer LIKE '%" . $conn->real_escape_string($search_user) . "%'";
+    $sql .= " AND bare_peer LIKE '%" . $conn->real_escape_string($search_user) . "%'";
 }
-$sql .= " ORDER BY id DESC LIMIT 50";
+if ($search_keyword) {
+    $sql .= " AND txt LIKE '%" . $conn->real_escape_string($search_keyword) . "%'";
+}
+if ($start_date) {
+    $sql .= " AND created_at >= '" . $conn->real_escape_string($start_date) . " 00:00:00'";
+}
+if ($end_date) {
+    $sql .= " AND created_at <= '" . $conn->real_escape_string($end_date) . " 23:59:59'";
+}
+
+$sql .= " ORDER BY id DESC LIMIT 100";
 $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
@@ -24,7 +39,7 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ThrillRig - Message Archive</title>
+    <title>ThrillRig - Advanced Archive</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -47,60 +62,89 @@ $result = $conn->query($sql);
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 2.5rem;
         }
 
         h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 800;
             background: linear-gradient(to right, #818cf8, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 0;
+            margin: 0.5rem 0;
         }
 
-        .search-box {
+        .filter-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            align-items: flex-end;
+        }
+
+        .filter-group {
             display: flex;
+            flex-direction: column;
             gap: 0.5rem;
         }
 
-        input[type="text"] {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            padding: 0.6rem 1rem;
-            border-radius: 12px;
-            color: white;
-            font-family: inherit;
-            outline: none;
-            width: 250px;
+        .filter-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        input[type="text"]:focus {
+        input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            color: white;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus {
             border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
         }
 
         button {
             background: var(--primary-color);
             color: white;
             border: none;
-            padding: 0.6rem 1.2rem;
+            padding: 0.75rem 1.5rem;
             border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            flex: 1;
         }
 
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .archive-card {
@@ -132,10 +176,7 @@ $result = $conn->query($sql);
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--glass-border);
             font-size: 0.95rem;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
+            line-height: 1.5;
         }
 
         tr:hover td {
@@ -149,11 +190,13 @@ $result = $conn->query($sql);
             border-radius: 6px;
             font-size: 0.85rem;
             font-family: monospace;
+            word-break: break-all;
         }
 
         .timestamp {
             color: var(--text-muted);
             font-size: 0.85rem;
+            white-space: nowrap;
         }
 
         .empty-state {
@@ -172,21 +215,46 @@ $result = $conn->query($sql);
         .nav-link:hover {
             color: var(--accent);
         }
+
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            .filter-panel {
+                grid-template-columns: 1fr;
+            }
+            body { padding: 1rem; }
+            th:nth-child(3), td:nth-child(3) { display: none; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div>
-                <a href="index.php" class="nav-link">← Back to Dashboard</a>
-                <h1>Message Archive</h1>
-            </div>
-            <form class="search-box" method="GET">
-                <input type="text" name="user" placeholder="User JID 검색..." value="<?= htmlspecialchars($search_user) ?>">
-                <button type="submit">검색</button>
-                <button type="button" onclick="location.href='messages.php'" style="background: rgba(255,255,255,0.1); color: #fff;">초기화</button>
-            </form>
+            <a href="index.php" class="nav-link">← Back to Dashboard</a>
+            <h1>Advanced Archive</h1>
         </div>
+
+        <form class="filter-panel" method="GET">
+            <div class="filter-group">
+                <label>User JID</label>
+                <input type="text" name="user" placeholder="예: shop_001" value="<?= htmlspecialchars($search_user) ?>">
+            </div>
+            <div class="filter-group">
+                <label>Keyword</label>
+                <input type="text" name="keyword" placeholder="메시지 내용 검색..." value="<?= htmlspecialchars($search_keyword) ?>">
+            </div>
+            <div class="filter-group">
+                <label>Start Date</label>
+                <input type="date" name="start_date" value="<?= htmlspecialchars($start_date) ?>">
+            </div>
+            <div class="filter-group">
+                <label>End Date</label>
+                <input type="date" name="end_date" value="<?= htmlspecialchars($end_date) ?>">
+            </div>
+            <div class="button-group">
+                <button type="submit">Search</button>
+                <button type="button" class="reset-btn" onclick="location.href='messages.php'">Reset</button>
+            </div>
+        </form>
 
         <div class="archive-card">
             <table>
@@ -202,14 +270,14 @@ $result = $conn->query($sql);
                         <?php while($row = $result->fetch_assoc()): ?>
                             <tr>
                                 <td><span class="badge"><?= htmlspecialchars($row['bare_peer']) ?></span></td>
-                                <td><?= htmlspecialchars($row['txt']) ?></td>
+                                <td><?= nl2br(htmlspecialchars($row['txt'])) ?></td>
                                 <td class="timestamp"><?= $row['created_at'] ?></td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
                             <td colspan="3" class="empty-state">
-                                검색된 메시지가 없습니다.
+                                검색 조건에 맞는 메시지가 없습니다.
                             </td>
                         </tr>
                     <?php endif; ?>
@@ -218,7 +286,7 @@ $result = $conn->query($sql);
         </div>
         
         <p style="text-align: center; color: var(--text-muted); margin-top: 2rem; font-size: 0.8rem;">
-            © 2026 ThrillRig Messaging Service - Last 50 messages displayed
+            © 2026 ThrillRig Messaging Service - Search optimized for up to 100 records
         </p>
     </div>
 </body>
