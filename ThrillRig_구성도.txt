@@ -9,7 +9,7 @@ A. 프로그램 개요
   - 안드로이드 폰 1대
   - 주차 등록 : 54로 0776
 
-1. Service 서버 구축
+1. TRService 서버 구축
 
  ** 중요 : 내 PC에 ThrillRig을 삭제했어. plink와 pscp를 사용해서 서버에서 PC로 복구를 해야 해 **
 
@@ -19,7 +19,7 @@ A. 프로그램 개요
 - OS : ubuntu
 - ID : esg
 - PW : esg!@#$
-- path : /home/esg/Project/ThrillRig/Program/Service
+- path : /home/esg/Project/ThrillRig/Program/TRService
 - plink, pscp로 작업을 했음.
 
 2. TRBrain 서버 구축
