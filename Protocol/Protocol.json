@@ -1,0 +1,57 @@
+{
+  "project": "ThrillRig",
+  "version": "0.0.2",
+  "protocol_type": "DELIMITED_STRING",
+  "settings": {
+    "cmd_delimiter": ":",
+    "data_delimiter": "|",
+    "encoding": "UTF-8"
+  },
+  "signals": {
+    "CALL": {
+      "id": "F13",
+      "name": "Remote_In",
+      "description": "게임 점수 투입",
+      "params": ["count"]
+    },
+    "CONTROL": {
+      "id": "F14",
+      "name": "Payout_Lock",
+      "description": "배출 차단 제어",
+      "params": ["minutes"]
+    },
+    "EMERGENCY": {
+      "id": "EMG",
+      "name": "Emergency_Control",
+      "description": "응급 및 시스템 강제 제어",
+      "actions": {
+        "PC_RESET": "리부팅",
+        "PC_OFF": "전원종료",
+        "GAME_KILL": "프로세스강제종료"
+      }
+    },
+    "STATICS": {
+      "id": "STAT",
+      "name": "Settlement_Data",
+      "description": "정산 데이터 보고",
+      "structure": [
+        {"name": "credit", "type": "int", "size": 4, "desc": "이용금액"},
+        {"name": "bank", "type": "int", "size": 4, "desc": "당첨금액"},
+        {"name": "usebank", "type": "int", "size": 4, "desc": "사용금액"},
+        {"name": "bankdelete", "type": "int", "size": 4, "desc": "삭제금액"}
+      ]
+    },
+    "BILLING": {
+      "id": "BILL",
+      "name": "Billing_Transaction",
+      "description": "과금 및 결제 트랜잭션",
+      "params": ["target", "data"]
+    },
+    "ACK": {
+      "id": "ACK",
+      "name": "Acknowledge",
+      "description": "메시지 수신 확인 응답",
+      "params": ["msg_id"]
+    }
+  }
+}

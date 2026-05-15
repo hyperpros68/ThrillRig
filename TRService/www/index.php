@@ -56,7 +56,6 @@
 
         .status-badge {
             display: inline-block;
-            margin-top: 2rem;
             padding: 0.5rem 1rem;
             border-radius: 9999px;
             font-size: 0.875rem;
@@ -66,11 +65,68 @@
             border: 1px solid rgba(239, 68, 68, 0.2);
             transition: all 0.3s ease;
         }
-
         .status-badge.connected {
             background: rgba(34, 197, 94, 0.1);
             color: #22c55e;
             border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2.5rem;
+            animation: fadeIn 1s ease-out 0.2s both;
+        }
+
+        .test-button-container {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-test {
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            outline: none;
+        }
+
+        .btn-test:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-test:active {
+            transform: translateY(0);
+        }
+
+        .btn-test.adapter:hover {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-color: #60a5fa;
+            box-shadow: 0 8px 20px -5px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-test.shop:hover {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border-color: #a78bfa;
+            box-shadow: 0 8px 20px -5px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-test.agent:hover {
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+            border-color: #f472b6;
+            box-shadow: 0 8px 20px -5px rgba(236, 72, 153, 0.5);
         }
 
         @keyframes fadeIn {
@@ -127,7 +183,14 @@
     <div class="container">
         <h1>Hello world</h1>
         <p>ThrillRig System Messaging Service</p>
-        <div id="xmpp-status" class="status-badge">XMPP: Disconnected</div>
+        <div class="status-row">
+            <div id="xmpp-status" class="status-badge">XMPP: Disconnected</div>
+            <div class="test-button-container">
+                <button class="btn-test adapter" onclick="sendTestMessage('ADAPTER')">Adapter</button>
+                <button class="btn-test shop" onclick="sendTestMessage('SHOP')">Shop</button>
+                <button class="btn-test agent" onclick="sendTestMessage('AGENT')">Agent</button>
+            </div>
+        </div>
     </div>
 
     <div id="notification-container"></div>
@@ -137,7 +200,15 @@
         const JID = 'trwww@59.187.96.23';
         const PASSWORD = 'trwww!@#$';
 
+        const TEST_TARGETS = {
+            'ADAPTER': 'test_tradp_001_001@59.187.96.23',
+            'SHOP': 'test_shop_001@59.187.96.23',
+            'AGENT': 'test_tragt_001_001@59.187.96.23'
+        };
+
         let connection = null;
+        let isConnected = false;
+        let processedIds = []; // 중복 체크용 배열
 
         function log(msg) {
             console.log("[XMPP]", msg);
@@ -156,6 +227,28 @@
                 const body = Strophe.getText(elems[0]);
                 log("Message from " + from + ": " + body);
                 
+                // --- 등기 방식(ACK) 응답 로직 ---
+                try {
+                    const data = JSON.parse(body);
+                    if (data.msg_id) {
+                        const ackId = data.msg_id;
+                        const reply = $msg({to: from, type: 'chat'}).c('body').t('ACK:' + ackId);
+                        connection.send(reply.tree());
+                        log("[ACK] Replied ACK for ID: " + ackId);
+
+                        // 중복 체크
+                        if (processedIds.includes(ackId)) {
+                            log("[IGNORE] Duplicate ID ignored: " + ackId);
+                            return true;
+                        }
+                        processedIds.push(ackId);
+                        if (processedIds.length > 20) processedIds.shift();
+                        log("[RECV] New Transaction ID: " + ackId);
+                    }
+                } catch(e) {
+                    // Not a JSON message, ignore ACK logic
+                }
+
                 // Show as an alert
                 showAlert("Notification", "Message from " + from.split('/')[0] + ": " + body);
             }
@@ -181,6 +274,7 @@
                 log('Strophe is connected.');
                 console.log('%c XMPP Connection Success! ', 'background: #22c55e; color: #fff; font-weight: bold;');
                 
+                isConnected = true;
                 statusBadge.innerText = 'XMPP: Connected';
                 statusBadge.classList.add('connected');
                 
@@ -190,6 +284,30 @@
                 connection.addHandler(onMessage, null, 'message', null, null,  null);
                 connection.send($pres().tree());
             }
+        }
+
+        function sendTestMessage(targetKey) {
+            if (!connection || !isConnected) {
+                showAlert("System", "XMPP is not connected yet.");
+                return;
+            }
+
+            const targetJid = TEST_TARGETS[targetKey];
+            const msgId = 'TRN_TEST_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            const payload = JSON.stringify({
+                msg_id: msgId,
+                type: 'SIGNAL_TEST',
+                sender: JID,
+                target: targetKey,
+                timestamp: new Date().toISOString(),
+                data: "Testing communication from Web Service"
+            });
+
+            const reply = $msg({to: targetJid, type: 'chat'}).c('body').t(payload);
+            connection.send(reply.tree());
+            
+            log(`[TEST] Sent message to ${targetKey} (${targetJid}): ${msgId}`);
+            showAlert("Test Sent", `Message sent to ${targetKey}<br><small style="font-size: 0.7rem; opacity: 0.8;">${msgId}</small>`);
         }
 
         function showAlert(title, message) {

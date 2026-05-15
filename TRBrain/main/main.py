@@ -11,11 +11,18 @@ import configparser
 import datetime
 import threading
 import json
+
+# 공통 규격 모듈 로드
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from TR_Protocol import TRProtocol
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_socketio import SocketIO, emit
 from slixmpp import ClientXMPP
 import mysql.connector
 import requests
+import base64
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 # --- Configuration & Logging Setup ---
 class Config:
@@ -33,6 +40,12 @@ class Config:
         self.db_name = self.cfg.get('Database', 'database', fallback='ThrillRig')
         
         self.active_llm = self.cfg.get('System', 'llm', fallback='Ollama')
+        self.aes_key = self.cfg.get('Security', 'AES_KEY', fallback='DefaultSecretKey32BytesLong12345').encode()
+        # AES-GCM requires exactly 16, 24, or 32 bytes. Ensure 32 bytes for AES-256.
+        if len(self.aes_key) < 32:
+            self.aes_key = self.aes_key.ljust(32, b'0')[:32]
+        else:
+            self.aes_key = self.aes_key[:32]
 
 def setup_logging():
     log_dir = os.path.join(os.path.dirname(__file__), '..', 'log')
@@ -51,13 +64,38 @@ def setup_logging():
         ]
     )
     return logging.getLogger("TRBrain")
+    
+# --- Security Manager ---
+class AESManager:
+    def __init__(self, key):
+        self.aesgcm = AESGCM(key)
+
+    def encrypt(self, plaintext):
+        iv = os.urandom(12) # GCM standard IV size
+        ciphertext = self.aesgcm.encrypt(iv, plaintext.encode(), None)
+        return {
+            "enc": True,
+            "data": base64.b64encode(ciphertext).decode(),
+            "iv": base64.b64encode(iv).decode()
+        }
+
+    def decrypt(self, data_dict):
+        try:
+            iv = base64.b64decode(data_dict['iv'])
+            ciphertext = base64.b64decode(data_dict['data'])
+            decrypted = self.aesgcm.decrypt(iv, ciphertext, None)
+            return decrypted.decode()
+        except Exception as e:
+            return f"Decryption Error: {str(e)}"
 
 # --- XMPP Bot ---
 class TRBrainBot(ClientXMPP):
-    def __init__(self, jid, password, logger, socketio):
+    def __init__(self, jid, password, logger, socketio, aes_manager):
         super().__init__(jid, password)
         self.logger = logger
         self.socketio = socketio
+        self.aes_manager = aes_manager
+        self.processed_ids = set() # 최근 처리한 메시지 ID 보관
         self.add_event_handler("session_start", self.session_start)
         self.add_event_handler("message", self.message)
 
@@ -70,8 +108,40 @@ class TRBrainBot(ClientXMPP):
         if msg['type'] in ('chat', 'normal'):
             body = msg['body']
             sender = msg['from'].bare
-            self.logger.info(f"Received message from {sender}: {body}")
-            # Web UI로 실시간 전송
+            
+            # --- Encryption Check ---
+            try:
+                msg_data = json.loads(body)
+                if msg_data.get('enc') is True:
+                    body = self.aes_manager.decrypt(msg_data)
+                    self.logger.info(f"[DECRYPT] Decrypted message from {sender}")
+            except:
+                pass # Not an encrypted JSON, proceed as plain text
+
+            # --- 등기 방식(ACK) 및 중복 체크 로직 ---
+            try:
+                data = json.loads(body)
+                msg_id = data.get('msg_id')
+                if msg_id:
+                    # 무조건 ACK는 보냄 (상대방의 재전송을 멈추기 위함)
+                    self.send_message(mto=sender, mbody=f"ACK:{msg_id}", mtype='chat')
+                    self.logger.info(f"[ACK] Sent ACK for: {msg_id}")
+                    
+                    # 이미 처리한 ID라면 이후 로직 건너뜜
+                    if msg_id in self.processed_ids:
+                        self.logger.info(f"[IGNORE] Duplicate Transaction ID: {msg_id} (ACK re-sent)")
+                        return
+                    
+                    # 새 ID인 경우 등록 (최대 1000개까지 관리)
+                    self.processed_ids.add(msg_id)
+                    if len(self.processed_ids) > 1000:
+                        self.processed_ids.pop()
+                    
+                    self.logger.info(f"[RECV] New Transaction Processed: {msg_id}")
+            except Exception as e:
+                self.logger.error(f"Message handle error: {str(e)}")
+            
+            # Web UI로 실시간 전송 (중복이 아닐 때만 도달)
             self.socketio.emit('new_msg', {'sender': sender, 'body': body}, namespace='/test')
 
 # --- LLM Providers ---
@@ -114,6 +184,7 @@ socketio = SocketIO(app, async_mode='threading')
 cfg_manager = Config(os.path.join(os.path.dirname(__file__), '..', 'cfg', 'TRBrain.cfg'))
 logger = setup_logging()
 llm_manager = LLMManager(cfg_manager.cfg)
+aes_manager = AESManager(cfg_manager.aes_key)
 xmpp_bot = None
 
 @app.route('/')
@@ -147,8 +218,11 @@ def handle_chat(data):
     target = data.get('to')
     body = data.get('msg')
     if xmpp_bot and target and body:
-        xmpp_bot.send_message(mto=target, mbody=body, mtype='chat')
-        logger.info(f"Sent message to {target}: {body}")
+        # Encrypt outgoing message
+        enc_data = aes_manager.encrypt(body)
+        enc_body = json.dumps(enc_data)
+        xmpp_bot.send_message(mto=target, mbody=enc_body, mtype='chat')
+        logger.info(f"Sent encrypted message to {target}")
 
 def start_xmpp():
     global xmpp_bot
@@ -162,7 +236,7 @@ def start_xmpp():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        xmpp_bot = TRBrainBot(jid, cfg_manager.login_pw, logger, socketio)
+        xmpp_bot = TRBrainBot(jid, cfg_manager.login_pw, logger, socketio, aes_manager)
         xmpp_bot.register_plugin('xep_0030')
         xmpp_bot.register_plugin('xep_0199')
         

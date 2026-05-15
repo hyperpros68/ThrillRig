@@ -1,4 +1,4 @@
-﻿#include <windows.h>
+#include <windows.h>
 #include <string>
 #include <shlobj.h>
 
@@ -12,13 +12,16 @@
 #define ID_EDIT_PW 102
 #define ID_EDIT_TO 103
 #define ID_BTN_INSTALL 104
+#define ID_CHK_SHOW_PW 105
+#define ID_EDIT_GAMEID 106
 
-HWND hEditId, hEditPw, hEditTo;
+HWND hEditGameId, hEditId, hEditPw, hEditTo;
 
 // 레지스트리에 설정 저장 함수
-bool SaveToRegistry(const std::wstring& id, const std::wstring& pw, const std::wstring& to) {
+bool SaveToRegistry(const std::wstring& gameId, const std::wstring& id, const std::wstring& pw, const std::wstring& to) {
     HKEY hKey;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_PATH, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
+        RegSetValueExW(hKey, L"GameID", 0, REG_SZ, (BYTE*)gameId.c_str(), (DWORD)(gameId.length() + 1) * sizeof(wchar_t));
         RegSetValueExW(hKey, L"AppID", 0, REG_SZ, (BYTE*)id.c_str(), (DWORD)(id.length() + 1) * sizeof(wchar_t));
         RegSetValueExW(hKey, L"AppPW", 0, REG_SZ, (BYTE*)pw.c_str(), (DWORD)(pw.length() + 1) * sizeof(wchar_t));
         RegSetValueExW(hKey, L"AppTO", 0, REG_SZ, (BYTE*)to.c_str(), (DWORD)(to.length() + 1) * sizeof(wchar_t));
@@ -45,26 +48,54 @@ bool InstallFiles() {
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_CREATE:
-        CreateWindowW(L"Static", L"ID:", WS_VISIBLE | WS_CHILD, 20, 20, 50, 20, hWnd, NULL, NULL, NULL);
-        hEditId = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 80, 20, 200, 20, hWnd, (HMENU)ID_EDIT_ID, NULL, NULL);
+    {
+        wchar_t exePath[MAX_PATH];
+        GetModuleFileNameW(NULL, exePath, MAX_PATH);
+        std::wstring configPath = exePath;
+        size_t pos = configPath.find_last_of(L"\\");
+        if (pos != std::wstring::npos) {
+            configPath = configPath.substr(0, pos + 1) + L"AdtInstall.cfg";
+        }
+
+        wchar_t defGameId[256] = { 0 }, defId[256] = { 0 }, defPw[256] = { 0 }, defTo[256] = { 0 };
+        GetPrivateProfileStringW(L"System", L"GameID", L"ThrillRig", defGameId, 256, configPath.c_str());
+        GetPrivateProfileStringW(L"System", L"AppID", L"", defId, 256, configPath.c_str());
+        GetPrivateProfileStringW(L"System", L"AppPW", L"", defPw, 256, configPath.c_str());
+        GetPrivateProfileStringW(L"System", L"ToMsgJID", L"trwww@59.187.96.23", defTo, 256, configPath.c_str());
+
+        CreateWindowW(L"Static", L"Game:", WS_VISIBLE | WS_CHILD, 20, 20, 50, 20, hWnd, NULL, NULL, NULL);
+        hEditGameId = CreateWindowW(L"Edit", defGameId, WS_VISIBLE | WS_CHILD | WS_BORDER, 80, 20, 200, 20, hWnd, (HMENU)ID_EDIT_GAMEID, NULL, NULL);
+
+        CreateWindowW(L"Static", L"ID:", WS_VISIBLE | WS_CHILD, 20, 50, 50, 20, hWnd, NULL, NULL, NULL);
+        hEditId = CreateWindowW(L"Edit", defId, WS_VISIBLE | WS_CHILD | WS_BORDER, 80, 50, 200, 20, hWnd, (HMENU)ID_EDIT_ID, NULL, NULL);
         
-        CreateWindowW(L"Static", L"PW:", WS_VISIBLE | WS_CHILD, 20, 50, 50, 20, hWnd, NULL, NULL, NULL);
-        hEditPw = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 80, 50, 200, 20, hWnd, (HMENU)ID_EDIT_PW, NULL, NULL);
+        CreateWindowW(L"Static", L"PW:", WS_VISIBLE | WS_CHILD, 20, 80, 50, 20, hWnd, NULL, NULL, NULL);
+        hEditPw = CreateWindowW(L"Edit", defPw, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_PASSWORD, 80, 80, 200, 20, hWnd, (HMENU)ID_EDIT_PW, NULL, NULL);
+        CreateWindowW(L"Button", L"Show", WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 290, 80, 60, 20, hWnd, (HMENU)ID_CHK_SHOW_PW, NULL, NULL);
         
-        CreateWindowW(L"Static", L"TO:", WS_VISIBLE | WS_CHILD, 20, 80, 50, 20, hWnd, NULL, NULL, NULL);
-        hEditTo = CreateWindowW(L"Edit", L"trwww@59.187.96.23", WS_VISIBLE | WS_CHILD | WS_BORDER, 80, 80, 200, 20, hWnd, (HMENU)ID_EDIT_TO, NULL, NULL);
+        CreateWindowW(L"Static", L"TO:", WS_VISIBLE | WS_CHILD, 20, 110, 50, 20, hWnd, NULL, NULL, NULL);
+        hEditTo = CreateWindowW(L"Edit", defTo, WS_VISIBLE | WS_CHILD | WS_BORDER, 80, 110, 200, 20, hWnd, (HMENU)ID_EDIT_TO, NULL, NULL);
         
-        CreateWindowW(L"Button", L"Install & Start", WS_VISIBLE | WS_CHILD, 100, 120, 100, 30, hWnd, (HMENU)ID_BTN_INSTALL, NULL, NULL);
-        break;
+        CreateWindowW(L"Button", L"Install & Start", WS_VISIBLE | WS_CHILD, 100, 150, 100, 30, hWnd, (HMENU)ID_BTN_INSTALL, NULL, NULL);
+    }
+    break;
 
     case WM_COMMAND:
+        if (LOWORD(wParam) == ID_CHK_SHOW_PW) {
+            LRESULT checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
+            SendMessage(hEditPw, EM_SETPASSWORDCHAR, (checked == BST_CHECKED) ? 0 : L'*', 0);
+            SetFocus(hEditPw); // 포커스를 다시 줘서 강제 리프레시 유도
+            InvalidateRect(hEditPw, NULL, TRUE);
+        }
+
         if (LOWORD(wParam) == ID_BTN_INSTALL) {
-            wchar_t id[256], pw[256], to[256];
+            wchar_t gameId[256], id[256], pw[256], to[256];
+            GetWindowTextW(hEditGameId, gameId, 256);
             GetWindowTextW(hEditId, id, 256);
             GetWindowTextW(hEditPw, pw, 256);
             GetWindowTextW(hEditTo, to, 256);
             
-            if (SaveToRegistry(id, pw, to)) {
+            if (SaveToRegistry(gameId, id, pw, to)) {
                 if (InstallFiles()) {
                     MessageBoxW(hWnd, L"Installation Successful!", L"Success", MB_OK);
                     ShellExecuteW(NULL, L"open", (std::wstring(INSTALL_DIR) + L"\\" + EXE_NAME).c_str(), NULL, NULL, SW_SHOW);
@@ -98,8 +129,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
     // 화면 중앙 좌표 계산
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    int windowWidth = 320;
-    int windowHeight = 200;
+    int windowWidth = 400;
+    int windowHeight = 240;
     int x = (screenWidth - windowWidth) / 2;
     int y = (screenHeight - windowHeight) / 2;
 

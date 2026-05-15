@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../TR_Protocol.php';
 /**
  * ThrillRig 핵심 비즈니스 로직 및 DB 관리를 위한 서비스 클래스
  * 10년 경력 시니어 개발자 설계: 싱글톤 패턴 및 보안 로직 중앙 집중화

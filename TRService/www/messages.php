@@ -33,6 +33,27 @@ if ($end_date) {
 
 $sql .= " ORDER BY id DESC LIMIT 100";
 $result = $conn->query($sql);
+
+$aes_key = "ThrillRigV1_SecretKey_2026_0515";
+
+function decrypt_message($body, $key_str) {
+    $data = json_decode($body, true);
+    if (!$data || !isset($data['enc']) || $data['enc'] !== true) return $body;
+
+    $key = str_pad($key_str, 32, '0');
+    if (strlen($key) > 32) $key = substr($key, 0, 32);
+
+    $ciphertext_combined = base64_decode($data['data']);
+    $iv = base64_decode($data['iv']);
+    
+    if (strlen($ciphertext_combined) < 16) return "[Invalid Payload]";
+    
+    $tag = substr($ciphertext_combined, -16);
+    $cipher = substr($ciphertext_combined, 0, -16);
+
+    $decrypted = openssl_decrypt($cipher, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+    return $decrypted !== false ? $decrypted : "[Decryption Failed]";
+}
 ?>
 <!DOCTYPE html>
 <html lang="ko">
@@ -270,7 +291,7 @@ $result = $conn->query($sql);
                         <?php while($row = $result->fetch_assoc()): ?>
                             <tr>
                                 <td><span class="badge"><?= htmlspecialchars($row['bare_peer']) ?></span></td>
-                                <td><?= nl2br(htmlspecialchars($row['txt'])) ?></td>
+                                <td><?= nl2br(htmlspecialchars(decrypt_message($row['txt'], $aes_key))) ?></td>
                                 <td class="timestamp"><?= $row['created_at'] ?></td>
                             </tr>
                         <?php endwhile; ?>
